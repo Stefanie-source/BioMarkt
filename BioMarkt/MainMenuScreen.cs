@@ -21,16 +21,18 @@ namespace BioMarkt
         {
             ProductScreen productScreen = new ProductScreen();
             productScreen.Show();
+
+            this.Hide();
         }
 
-        private void MainMenuScreen_Load(object sender, EventArgs e)
-        {
-
-        }
+        
 
         private void btnBill_Click(object sender, EventArgs e)
         {
+            BillScreen billScreen=new BillScreen();
+            billScreen.Show();
 
+            this.Hide();
         }
     }
 }
