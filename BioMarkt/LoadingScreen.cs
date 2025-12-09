@@ -33,6 +33,10 @@ namespace BioMarkt
             if (loadingBarValue >= loadingProgressbar.Maximum)
             {
                 loadingbarTimer.Stop();
+
+                MainMenuScreen mainMenuScreen = new MainMenuScreen();
+                mainMenuScreen.Show();
+
                 this.Hide();
                 
             }
