@@ -193,6 +193,7 @@
             this.productsDGV.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.productsDGV.Size = new System.Drawing.Size(765, 197);
             this.productsDGV.TabIndex = 12;
+            this.productsDGV.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.productsDGV_CellClick);
             // 
             // cmbProductCategory
             // 
@@ -237,7 +238,6 @@
             this.Name = "ProductScreen";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Produkte";
-           
             ((System.ComponentModel.ISupportInitialize)(this.productsDGV)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

@@ -92,6 +92,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>_ProNatur_Biomarkt_GmbhDataSet.xsd</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="BillScreen.resx">
+      <DependentUpon>BillScreen.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="LoadingScreen.resx">
       <DependentUpon>LoadingScreen.cs</DependentUpon>
     </EmbeddedResource>

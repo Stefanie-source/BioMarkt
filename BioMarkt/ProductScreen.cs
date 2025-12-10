@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,25 +41,37 @@ namespace BioMarkt
 
         private void btnProductSave_Click(object sender, EventArgs e)
         {
-            if (txtProductName.Text == ""
-                || txtProductBrand.Text == ""
-                || txtProductPrice.Text == ""
-                || cmbProductCategory.Text == ""
-                   || txtProductPrice.Text == "")
+            if (string.IsNullOrWhiteSpace(txtProductName.Text)
+                || string.IsNullOrWhiteSpace(txtProductBrand.Text)
+                || string.IsNullOrWhiteSpace(txtProductPrice.Text)
+                || string.IsNullOrWhiteSpace(cmbProductCategory.Text))
             {
                 MessageBox.Show("Bitte fülle alle Werte aus.");
-
                 return;
             }
 
-            string productName = txtProductName.Text;
-            string productBrand = txtProductBrand.Text;
-            string productCategory = cmbProductCategory.Text;
-            string productPrice = txtProductPrice.Text;
+            if (!decimal.TryParse(txtProductPrice.Text, NumberStyles.Any, CultureInfo.GetCultureInfo("de-DE"), out decimal priceValue))
+            {
+                MessageBox.Show("Preis ungültig.");
+                return;
+            }
 
-            string query = string.Format("INSERT INTO Products values ('{0}','{1}','{2}',{3})", productName, productBrand, productCategory, productPrice);
+            string sql = "INSERT INTO Products (Name, Brand, Category, Price) VALUES (@name, @brand, @category, @price)";
+            using (var conn = new SqlConnection(databaseConnection.ConnectionString))
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.Add("@name", SqlDbType.NVarChar).Value = txtProductName.Text;
+                cmd.Parameters.Add("@brand", SqlDbType.NVarChar).Value = txtProductBrand.Text;
+                cmd.Parameters.Add("@category", SqlDbType.NVarChar).Value = cmbProductCategory.Text;
+                var p = cmd.Parameters.Add("@price", SqlDbType.Decimal);
+                p.Value = priceValue;
+                p.Precision = 18;
+                p.Scale = 2;
 
-            ExecuteQuery(query);
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+
             ClearAllFields();
             ShowProducts();
         }
@@ -69,21 +82,28 @@ namespace BioMarkt
 
         private void btnProductEdit_Click(object sender, EventArgs e)
         {
-            if (lastSelectedProductKey == 0)
+            if (lastSelectedProductKey == 0) { MessageBox.Show("Bitte wähle zuerst ein Produkt aus."); return; }
+
+            if (!decimal.TryParse(txtProductPrice.Text, NumberStyles.Any, CultureInfo.GetCultureInfo("de-DE"), out decimal priceValue))
             {
-                MessageBox.Show("Bitte wähle zuerst ein Produkt aus.");
-                return;
+                MessageBox.Show("Preis ungültig."); return;
             }
 
-            string productName = txtProductName.Text;
-            string productBrand = txtProductBrand.Text;
-            string productCategory = cmbProductCategory.Text;
-            string productPrice = txtProductPrice.Text;
+            string sql = "UPDATE Products SET Name=@name, Brand=@brand, Category=@category, Price=@price WHERE Id=@id";
+            using (var conn = new SqlConnection(databaseConnection.ConnectionString))
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.Add("@name", SqlDbType.NVarChar).Value = txtProductName.Text;
+                cmd.Parameters.Add("@brand", SqlDbType.NVarChar).Value = txtProductBrand.Text;
+                cmd.Parameters.Add("@category", SqlDbType.NVarChar).Value = cmbProductCategory.Text;
+                var p = cmd.Parameters.Add("@price", SqlDbType.Decimal);
+                p.Value = priceValue;
+                p.Precision = 18; p.Scale = 2;
+                cmd.Parameters.Add("@id", SqlDbType.Int).Value = lastSelectedProductKey;
 
-            string query = string.Format("update Products set Name='{0}', Brand='{1}', Category='{2}', Price='{3}' where Id={4}"
-                , productName, productBrand, productCategory, productPrice, lastSelectedProductKey);
-
-            ExecuteQuery(query);
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
 
             ShowProducts();
         }
@@ -122,14 +142,29 @@ namespace BioMarkt
             cmbProductCategory.SelectedItem = null;
         }
 
-        private void productsDGV_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void productsDGV_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            txtProductName.Text = productsDGV.SelectedRows[0].Cells[1].Value.ToString();
-            txtProductBrand.Text = productsDGV.SelectedRows[0].Cells[2].Value.ToString();
-            cmbProductCategory.Text = productsDGV.SelectedRows[0].Cells[3].Value.ToString();
-            txtProductPrice.Text = productsDGV.SelectedRows[0].Cells[4].Value.ToString();
 
-            lastSelectedProductKey = (int)productsDGV.SelectedRows[0].Cells[0].Value;
-        }
+
+            if (e.RowIndex >= 0)
+            {
+                txtProductName.Text = productsDGV.Rows[e.RowIndex].Cells[1].Value?.ToString();
+                txtProductBrand.Text = productsDGV.Rows[e.RowIndex].Cells[2].Value?.ToString();
+                cmbProductCategory.Text = productsDGV.Rows[e.RowIndex].Cells[3].Value?.ToString();
+
+                // Preis als decimal lesen und in deutscher Form anzeigen (Komma)
+                var priceObj = productsDGV.Rows[e.RowIndex].Cells[4].Value;
+                if (priceObj != null && decimal.TryParse(priceObj.ToString(), out decimal priceValue))
+                {
+                    txtProductPrice.Text = priceValue.ToString("0.00", CultureInfo.GetCultureInfo("de-DE"));
+                }
+                else
+                {
+                    txtProductPrice.Text = "";
+                }
+
+                lastSelectedProductKey = Convert.ToInt32(productsDGV.Rows[e.RowIndex].Cells[0].Value);
+            }
+        }   
     }
 }
